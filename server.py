@@ -2,7 +2,7 @@ import socket
 import threading
 import struct
 import time
-ip='192.168.43.99'
+ip='192.168.0.100'
 begin_port=8888
 SP=0
 RV=1
@@ -95,8 +95,10 @@ def meeting_video(meetnum):
             data = b""
             i=i+1
             info=struct.unpack('L',client_rv.recv(4))
-            data+=struct.pack('LL',info[0],i)+client_rv.recv(info[0])
+            print('客户端：'+str(i)+'数据长度:'+str(info[0]))
+            data+=client_rv.recv(info[0])
             for client_sv in meet['svc']:
+                client_sv.send(struct.pack('LL',info[0],i))
                 client_sv.send(data)
 
 

@@ -7,7 +7,7 @@ import pickle
 import time
 import zlib
 import numpy
-ip='192.168.43.99'
+ip='192.168.0.100'
 begin_port=8888
 SP=0
 SV=1
@@ -52,44 +52,41 @@ def video_send():
     send_vsocket.connect((ip,send_vport))
     print('成功连接发送通道')
     while True:
-        cap = cv2.VideoCapture(0)
-        while cap.isOpened():
-            ret, frame = cap.read()
-            data = pickle.dumps(frame)
-            zdata = zlib.compress(data, zlib.Z_BEST_COMPRESSION)
+        camera = cv2.VideoCapture(0)  # 从摄像头中获取视频
+        img_param = [int(cv2.IMWRITE_JPEG_QUALITY), 15]  # 设置传送图像格式、帧数
+        while True:
+            time.sleep(0.1)  # 推迟线程运行0.1s
+            _, img = camera.read()  # 读取视频每一帧
+            img = cv2.resize(img, (640, 480))  # 按要求调整图像大小(resolution必须为元组)
+            _, img_encode = cv2.imencode('.jpg', img, img_param)  # 按格式生成图片
+            img_code = numpy.array(img_encode)  # 转换成矩阵
+            img_data = img_code.tobytes()  # 生成相应的字符串
             try:
-                send_vsocket.sendall(struct.pack("L", len(zdata)) + zdata)
-                time.sleep(0.03)
+                # 按照相应的格式进行打包发送图片
+                send_vsocket.send(struct.pack("L", len(img_data)))
+                send_vsocket.send(img_data)
             except:
-                break
-            cap.read()
+                camera.release()  # 释放资源
 
 
 def video_recv():
     recv_vsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     recv_vsocket.connect((ip, recv_vport))
     print('成功连接接收通道')
-    payload_size = struct.calcsize("LL")
-    data = "".encode("utf-8")
     while True:
-        while len(data) < payload_size:
-            data += recv_vsocket.recv(81920)
-        packed_size_num = data[:payload_size]
-        data = data[payload_size:]
-        msg_size=struct.unpack("LL", packed_size_num)[0]
-        num=struct.unpack("LL", packed_size_num)[1]
-        while len(data) < msg_size:
-            data += recv_vsocket.recv(81920)
-        zframe_data = data[:msg_size]
-        data = data[msg_size:]
-        frame_data = zlib.decompress(zframe_data)
-        frame = pickle.loads(frame_data)
         try:
-            cv2.imshow('user'+str(num), frame)
+            buf = b""
+            img_info = struct.unpack('LL', recv_vsocket.recv(8))
+            buf += recv_vsocket.recv(img_info[0])
+            data = numpy.frombuffer(buf, dtype='uint8')  # 按uint8转换为图像矩阵
+            image = cv2.imdecode(data, 1)  # 图像解码
+            cv2.imshow('user' + str(img_info[1]), image)
         except:
-            pass
-        if cv2.waitKey(1) & 0xFF == 27:
-            break
+            pass;
+        finally:
+            if (cv2.waitKey(10) == 27):  # 每10ms刷新一次图片，按‘ESC’（27）退出
+                cv2.destroyAllWindows()
+                break
 
 
 if __name__ == '__main__':

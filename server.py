@@ -103,9 +103,13 @@ def meeting_video(meetnum):
                     if begin[0] == b'C':
                         break
                     elif begin[0] != b'B':
+                        e = client_rv.recv(20000)
+                        print('错误信息长度：' + str(len(e)))
                         begin = struct.unpack('c', client_rv.recv(1))
                         print('收到begin' + str(begin[0]))
                 elif begin[0] != b'B':
+                    e=client_rv.recv(20000)
+                    print('错误信息长度：'+str(len(e)))
                     begin = struct.unpack('c', client_rv.recv(1))
                     print('收到begin' + str(begin[0]))
             info=struct.unpack('L',client_rv.recv(4))

@@ -91,9 +91,13 @@ def video_recv():
                     if begin[0]==b'C':
                         break
                     elif begin[0]!=b'B':
+                        e=recv_vsocket.recv(20000)
+                        print('错误信息长度：'+str(len(e)))
                         begin = struct.unpack('c', recv_vsocket.recv(1))
                         print('收到begin' + str(begin[0]))
                 elif begin[0] != b'B':
+                    e=recv_vsocket.recv(20000)
+                    print('错误信息长度：'+str(len(e)))
                     begin = struct.unpack('c', recv_vsocket.recv(1))
                     print('收到begin' + str(begin[0]))
 

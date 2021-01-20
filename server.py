@@ -112,7 +112,7 @@ def meeting_video(meetnum):
                     print('错误信息长度：'+str(len(e)))
                     begin = struct.unpack('c', client_rv.recv(1))
                     print('收到begin' + str(begin[0]))
-            info=struct.unpack('b',client_rv.recv(2))
+            info=struct.unpack('h',client_rv.recv(2))
             print('客户端：'+str(i)+'数据长度:'+str(info[0]))
             data+=client_rv.recv(info[0])
             for client_sv in meet['svc']:
@@ -120,7 +120,7 @@ def meeting_video(meetnum):
                     continue
                 client_sv.send(struct.pack('ccc', b'B',b'B',b'C'))
                 print('发送数据长度：'+str(len(data)))
-                client_sv.send(struct.pack('bb',len(data),i))
+                client_sv.send(struct.pack('hh',len(data),i))
                 client_sv.sendall(data)
 
 

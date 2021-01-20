@@ -7,7 +7,7 @@ import pickle
 import time
 import zlib
 import numpy
-ip='192.168.0.100'
+ip='192.168.43.99'
 begin_port=8888
 SP=0
 SV=1
@@ -52,22 +52,27 @@ def video_send():
     send_vsocket.connect((ip,send_vport))
     print('成功连接发送通道')
     while True:
-        camera = cv2.VideoCapture(0)  # 从摄像头中获取视频
+        camera = cv2.VideoCapture(0,cv2.CAP_DSHOW)  # 从摄像头中获取视频
         img_param = [int(cv2.IMWRITE_JPEG_QUALITY), 15]  # 设置传送图像格式、帧数
-        while True:
-            time.sleep(0.01)  # 推迟线程运行0.1s
+        flag = camera.isOpened()
+        while flag:
             _, img = camera.read()  # 读取视频每一帧
+            time.sleep(0.01)  # 推迟线程运行0.1s
+            if img is None:
+                print('没有读到图片')
+                continue
             img = cv2.resize(img, (640, 480))  # 按要求调整图像大小(resolution必须为元组)
             _, img_encode = cv2.imencode('.jpg', img, img_param)  # 按格式生成图片
             img_code = numpy.array(img_encode)  # 转换成矩阵
             img_data = img_code.tobytes()  # 生成相应的字符串
             try:
                 # 按照相应的格式进行打包发送图片
+                send_vsocket.send(struct.pack("c", b'B'))
                 send_vsocket.send(struct.pack("L", len(img_data)))
                 print('发送数据长度：'+str(len(img_data)))
                 send_vsocket.sendall(img_data)
             except:
-                camera.release()  # 释放资源
+                camera.release()
 
 
 def video_recv():
@@ -77,6 +82,10 @@ def video_recv():
     while True:
         try:
             buf = b""
+            begin = struct.unpack('c', recv_vsocket.recv(1))
+            print('收到begin' + str(begin))
+            while begin[0] != b'B':
+                begin = struct.unpack('c', recv_vsocket.recv(1))
             img_info = struct.unpack('LL', recv_vsocket.recv(8))
             print('接收数据长度：'+str(img_info[0]))
             buf += recv_vsocket.recv(img_info[0])

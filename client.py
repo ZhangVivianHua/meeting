@@ -114,6 +114,7 @@ def video_recv():
             image = cv2.imdecode(data, 1)  # 图像解码
             cv2.imshow('user' + str(img_info[1]), image)
         except:
+            print('接收数据出错')
             pass;
         finally:
             if (cv2.waitKey(1) == 27):  # 每10ms刷新一次图片，按‘ESC’（27）退出

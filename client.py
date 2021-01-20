@@ -74,7 +74,7 @@ def video_send():
             try:
                 # 按照相应的格式进行打包发送图片
                 send_vsocket.send(struct.pack("ccc", b'B',b'B',b'C'))
-                send_vsocket.send(struct.pack("L", len(img_data)))
+                send_vsocket.send(struct.pack("b", len(img_data)))
                 print('发送数据长度：'+str(len(img_data)))
                 send_vsocket.sendall(img_data)
             except:
@@ -107,7 +107,7 @@ def video_recv():
                     begin = struct.unpack('c', recv_vsocket.recv(1))
                     print('收到begin' + str(begin[0]))
 
-            img_info = struct.unpack('LL', recv_vsocket.recv(8))
+            img_info = struct.unpack('bb', recv_vsocket.recv(4))
             print('接收数据长度：'+str(img_info[0]))
             buf += recv_vsocket.recv(img_info[0])
             data = numpy.frombuffer(buf, dtype='uint8')  # 按uint8转换为图像矩阵

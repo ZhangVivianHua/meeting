@@ -2,7 +2,7 @@ import socket
 import threading
 import struct
 import time
-ip='192.168.43.99'
+ip='192.168.0.74'
 begin_port=8888
 SP=0
 RV=1
@@ -126,7 +126,7 @@ def meeting_video(meetnum):
                 print('本次接收到'+str(len(data))+',再次尝试接收')
                 data+=client_rv.recv(info[0]-len(data))
             for client_sv in meet['svc']:
-                if client_sv.getpeername()[0]==client_rv.getpeername()[0]:# and client_sv.getpeername()[1]==client_rv.getpeername()[1]:
+                if client_sv.getpeername()[0]==client_rv.getpeername()[0] and client_sv.getpeername()[1]==client_rv.getpeername()[1]:
                     continue
                 client_sv.send(struct.pack('ccc', b'B',b'B',b'C'))
                 print('发送数据长度：'+str(len(data)))
@@ -139,11 +139,11 @@ def meeting_audio(meetnum):
     print(meet)
     while True:
         for client_ra in meet['rac']:
-            content=client_ra.recv(10000000)
+            content=client_ra.recv(100000)
             print('收到音频长度：'+str(len(content)))
             for client_sa in meet['sac']:
-                if content is not  None:
-                    if client_sa.getpeername()[0] == client_ra.getpeername()[0]:# and client_sa.getpeername()[1] == client_ra.getpeername()[1]:
+                if content is not None:
+                    if client_sa.getpeername()[0] == client_ra.getpeername()[0] and client_sa.getpeername()[1] == client_ra.getpeername()[1]:
                         continue
                     client_sa.sendall(content)
 

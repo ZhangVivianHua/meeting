@@ -51,6 +51,8 @@ def connect_server():
         else:
             threading.Thread(target=video_send).start()
             threading.Thread(target=video_recv).start()
+            threading.Thread(target=audio_send).start()
+            threading.Thread(target=audio_recv).start()
             break
 
 
@@ -68,7 +70,7 @@ def video_send():
             if img is None:
                 print('没有读到图片')
                 continue
-            img = cv2.resize(img, (320, 240))  # 按要求调整图像大小(resolution必须为元组)
+            img = cv2.resize(img, (640, 480))  # 按要求调整图像大小(resolution必须为元组)
             _, img_encode = cv2.imencode('.jpg', img, img_param)  # 按格式生成图片
             img_code = numpy.array(img_encode)  # 转换成矩阵
             img_data = img_code.tobytes()  # 生成相应的字符串
@@ -151,6 +153,7 @@ def audio_recv():
             frame_data = data[:msg_size]
             data = data[msg_size:]
             frames = pickle.loads(frame_data)
+            print('播放音频长度：'+str(len(frames)))
             for frame in frames:
                 stream.write(frame, CHUNK)
 
@@ -169,6 +172,7 @@ def audio_send():
             senddata = pickle.dumps(frames)
             try:
                 send_asocket.sendall(struct.pack("L", len(senddata)) + senddata)
+                print('发送音频长度：'+str(len(senddata)))
             except:
                 break
 

@@ -80,6 +80,7 @@ def listen_state(client):
                 print('客户端音频接收通道已连接,客户端socket：' + str(clientra))
                 if feedback==2:
                     threading.Thread(target=meeting_video,args=(info[1],)).start()
+                    threading.Thread(target=meeting_audio,args=(info[1],)).start()
         except ConnectionResetError or struct.error:
             clients.remove(client)
             server_socket.close()
@@ -125,7 +126,7 @@ def meeting_video(meetnum):
                 print('本次接收到'+str(len(data))+',再次尝试接收')
                 data+=client_rv.recv(info[0]-len(data))
             for client_sv in meet['svc']:
-                if client_sv.getpeername()[0]==client_rv.getpeername()[0] and client_sv.getpeername()[1]==client_rv.getpeername()[1]:
+                if client_sv.getpeername()[0]==client_rv.getpeername()[0]:# and client_sv.getpeername()[1]==client_rv.getpeername()[1]:
                     continue
                 client_sv.send(struct.pack('ccc', b'B',b'B',b'C'))
                 print('发送数据长度：'+str(len(data)))
@@ -133,15 +134,16 @@ def meeting_video(meetnum):
                 client_sv.sendall(data)
 
 
-def send_recv2(meetnum):
+def meeting_audio(meetnum):
     meet = meets[meetnum]
     print(meet)
     while True:
         for client_ra in meet['rac']:
             content=client_ra.recv(10000000)
+            print('收到音频长度：'+str(len(content)))
             for client_sa in meet['sac']:
                 if content is not  None:
-                    if client_sa.getpeername()[0] == client_ra.getpeername()[0] and client_sa.getpeername()[1] == client_ra.getpeername()[1]:
+                    if client_sa.getpeername()[0] == client_ra.getpeername()[0]:# and client_sa.getpeername()[1] == client_ra.getpeername()[1]:
                         continue
                     client_sa.sendall(content)
 

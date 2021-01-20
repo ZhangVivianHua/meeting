@@ -2,7 +2,7 @@ import socket
 import threading
 import struct
 import time
-ip='192.168.0.74'
+ip='192.168.43.99'
 begin_port=8888
 SP=0
 RV=1
@@ -68,10 +68,16 @@ def listen_state(client):
             if feedback!=1:
                 clientrv, rvD_addr = server_list[1].accept()
                 clientsv, svD_addr = server_list[2].accept()
+                clientra, raD_addr = server_list[3].accept()
+                clientsa, saD_addr = server_list[4].accept()
                 meets[info[1]]['rvc'].append(clientrv)
                 meets[info[1]]['svc'].append(clientsv)
+                meets[info[1]]['rac'].append(clientra)
+                meets[info[1]]['sac'].append(clientsa)
                 print('客户端视频发送通道已连接,客户端socket：'+str(clientsv))
                 print('客户端视频接收通道已连接,客户端socket：'+str(clientrv))
+                print('客户端音频发送通道已连接,客户端socket：' + str(clientsa))
+                print('客户端音频接收通道已连接,客户端socket：' + str(clientra))
                 if feedback==2:
                     threading.Thread(target=meeting_video,args=(info[1],)).start()
         except ConnectionResetError or struct.error:
@@ -113,8 +119,11 @@ def meeting_video(meetnum):
                     begin = struct.unpack('c', client_rv.recv(1))
                     print('收到begin' + str(begin[0]))
             info=struct.unpack('h',client_rv.recv(2))
-            print('客户端：'+str(i)+'数据长度:'+str(info[0]))
+            print('客户端：'+str(i)+'数据总长度:'+str(info[0]))
             data+=client_rv.recv(info[0])
+            while len(data)<info[0]:
+                print('本次接收到'+str(len(data))+',再次尝试接收')
+                data+=client_rv.recv(info[0]-len(data))
             for client_sv in meet['svc']:
                 if client_sv.getpeername()[0]==client_rv.getpeername()[0] and client_sv.getpeername()[1]==client_rv.getpeername()[1]:
                     continue
@@ -122,6 +131,19 @@ def meeting_video(meetnum):
                 print('发送数据长度：'+str(len(data)))
                 client_sv.send(struct.pack('hh',len(data),i))
                 client_sv.sendall(data)
+
+
+def send_recv2(meetnum):
+    meet = meets[meetnum]
+    print(meet)
+    while True:
+        for client_ra in meet['rac']:
+            content=client_ra.recv(10000000)
+            for client_sa in meet['sac']:
+                if content is not  None:
+                    if client_sa.getpeername()[0] == client_ra.getpeername()[0] and client_sa.getpeername()[1] == client_ra.getpeername()[1]:
+                        continue
+                    client_sa.sendall(content)
 
 
 if __name__ == '__main__':

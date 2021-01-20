@@ -5,9 +5,9 @@ import random
 import cv2
 import pickle
 import time
-import zlib
 import numpy
-ip='117.78.1.190'
+import pyaudio
+ip='192.168.43.99'
 begin_port=8888
 SP=0
 SV=1
@@ -19,6 +19,13 @@ send_vport=begin_port+SV
 recv_vport=begin_port+RV
 send_aport=begin_port+SA
 recv_aport=begin_port+RA
+CHUNK = 1024
+FORMAT = pyaudio.paInt16
+CHANNELS = 2
+RATE = 8000
+RECORD_SECONDS = 0.3
+stream = None
+p = pyaudio.PyAudio()
 
 
 def connect_server():
@@ -50,7 +57,7 @@ def connect_server():
 def video_send():
     send_vsocket=socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     send_vsocket.connect((ip,send_vport))
-    print('成功连接发送通道')
+    print('成功连接视频发送通道')
     while True:
         camera = cv2.VideoCapture(0,cv2.CAP_DSHOW)  # 从摄像头中获取视频
         img_param = [int(cv2.IMWRITE_JPEG_QUALITY), 15]  # 设置传送图像格式、帧数
@@ -84,7 +91,7 @@ def video_send():
 def video_recv():
     recv_vsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     recv_vsocket.connect((ip, recv_vport))
-    print('成功连接接收通道')
+    print('成功连接视频接收通道')
     while True:
         try:
             buf = b""
@@ -110,6 +117,9 @@ def video_recv():
             img_info = struct.unpack('hh', recv_vsocket.recv(4))
             print('接收数据长度：'+str(img_info[0]))
             buf += recv_vsocket.recv(img_info[0])
+            while len(buf) < img_info[0]:
+                print('本次接收到' + str(len(buf)) + ',再次尝试接收')
+                buf += recv_vsocket.recv(img_info[0] - len(buf))
             data = numpy.frombuffer(buf, dtype='uint8')  # 按uint8转换为图像矩阵
             image = cv2.imdecode(data, 1)  # 图像解码
             cv2.imshow('user' + str(img_info[1]), image)
@@ -117,8 +127,49 @@ def video_recv():
             print('接收数据出错')
             pass;
         finally:
-            if (cv2.waitKey(1) == 27):  # 每10ms刷新一次图片，按‘ESC’（27）退出
+            if cv2.waitKey(1) == 27:  # 每10ms刷新一次图片，按‘ESC’（27）退出
                 cv2.destroyAllWindows()
+                break
+
+
+def audio_recv():
+    recv_asocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    recv_asocket.connect((ip, recv_aport))
+    print('成功连接音频接收通道')
+    while True:
+        data = "".encode("utf-8")
+        payload_size = struct.calcsize("L")
+        stream = p.open(format=FORMAT,channels=CHANNELS,rate=RATE,output=True,frames_per_buffer = CHUNK)
+        while True:
+            while len(data) < payload_size:
+                data += recv_asocket.recv(81920)
+            packed_size = data[:payload_size]
+            data = data[payload_size:]
+            msg_size = struct.unpack("L", packed_size)[0]
+            while len(data) < msg_size:
+                data += recv_asocket.recv(81920)
+            frame_data = data[:msg_size]
+            data = data[msg_size:]
+            frames = pickle.loads(frame_data)
+            for frame in frames:
+                stream.write(frame, CHUNK)
+
+
+def audio_send():
+    send_asocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    send_asocket.connect((ip, send_aport))
+    print('成功连接音频发送通道')
+    while True:
+        stream = p.open(format=FORMAT, channels=CHANNELS, rate=RATE, input=True, frames_per_buffer=CHUNK)
+        while stream.is_active():
+            frames = []
+            for i in range(0, int(RATE / CHUNK * RECORD_SECONDS)):
+                data = stream.read(CHUNK)
+                frames.append(data)
+            senddata = pickle.dumps(frames)
+            try:
+                send_asocket.sendall(struct.pack("L", len(senddata)) + senddata)
+            except:
                 break
 
 

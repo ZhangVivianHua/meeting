@@ -66,6 +66,12 @@ def video_send():
             img_code = numpy.array(img_encode)  # 转换成矩阵
             img_data = img_code.tobytes()  # 生成相应的字符串
             try:
+                cv2.imshow('myself', img)
+            finally:
+                if (cv2.waitKey(1) == 27):  # 每10ms刷新一次图片，按‘ESC’（27）退出
+                    cv2.destroyAllWindows()
+                    break
+            try:
                 # 按照相应的格式进行打包发送图片
                 send_vsocket.send(struct.pack("ccc", b'B',b'B',b'C'))
                 send_vsocket.send(struct.pack("L", len(img_data)))

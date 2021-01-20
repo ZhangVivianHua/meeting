@@ -67,7 +67,7 @@ def video_send():
             img_data = img_code.tobytes()  # 生成相应的字符串
             try:
                 # 按照相应的格式进行打包发送图片
-                send_vsocket.send(struct.pack("c", b'B'))
+                send_vsocket.send(struct.pack("ccc", b'B',b'B',b'C'))
                 send_vsocket.send(struct.pack("L", len(img_data)))
                 print('发送数据长度：'+str(len(img_data)))
                 send_vsocket.sendall(img_data)
@@ -84,8 +84,9 @@ def video_recv():
             buf = b""
             begin = struct.unpack('c', recv_vsocket.recv(1))
             print('收到begin' + str(begin))
-            while begin[0] != b'B':
+            while begin[0]==b'B':
                 begin = struct.unpack('c', recv_vsocket.recv(1))
+                print('收到begin' + str(begin[0]))
             img_info = struct.unpack('LL', recv_vsocket.recv(8))
             print('接收数据长度：'+str(img_info[0]))
             buf += recv_vsocket.recv(img_info[0])

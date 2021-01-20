@@ -96,14 +96,14 @@ def meeting_video(meetnum):
             i=i+1
             begin=struct.unpack('c',client_rv.recv(1))
             print('收到begin'+str(begin))
-            while begin[0]!=b'B':
+            while begin[0]!=b'C':
                 begin = struct.unpack('c', client_rv.recv(1))
-                print('收到begin' + str(begin))
+                print('收到begin' + str(begin[0]))
             info=struct.unpack('L',client_rv.recv(4))
             print('客户端：'+str(i)+'数据长度:'+str(info[0]))
             data+=client_rv.recv(info[0])
             for client_sv in meet['svc']:
-                client_sv.send(struct.pack('c',b'B'))
+                client_sv.send(struct.pack('ccc', b'B',b'B',b'C'))
                 print('发送数据长度：'+str(len(data)))
                 client_sv.send(struct.pack('LL',len(data),i))
                 client_sv.send(data)

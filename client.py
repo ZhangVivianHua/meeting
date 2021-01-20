@@ -84,12 +84,19 @@ def video_recv():
             buf = b""
             begin = struct.unpack('c', recv_vsocket.recv(1))
             print('收到begin' + str(begin))
-            while begin[0]!=b'B':
-                begin = struct.unpack('c', recv_vsocket.recv(1))
-                print('收到begin' + str(begin[0]))
-            while begin[0]!=b'C':
-                begin = struct.unpack('c', recv_vsocket.recv(1))
-                print('收到begin' + str(begin[0]))
+            while True:
+                if begin[0]==b'B':
+                    begin = struct.unpack('c', recv_vsocket.recv(1))
+                    print('收到begin' + str(begin[0]))
+                    if begin[0]==b'C':
+                        break
+                    elif begin[0]!=b'B':
+                        begin = struct.unpack('c', recv_vsocket.recv(1))
+                        print('收到begin' + str(begin[0]))
+                elif begin[0] != b'B':
+                    begin = struct.unpack('c', recv_vsocket.recv(1))
+                    print('收到begin' + str(begin[0]))
+
             img_info = struct.unpack('LL', recv_vsocket.recv(8))
             print('接收数据长度：'+str(img_info[0]))
             buf += recv_vsocket.recv(img_info[0])

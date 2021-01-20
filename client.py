@@ -144,12 +144,12 @@ def audio_recv():
         stream = p.open(format=FORMAT,channels=CHANNELS,rate=RATE,output=True,frames_per_buffer = CHUNK)
         while True:
             while len(data) < payload_size:
-                data += recv_asocket.recv(81920)
+                data += recv_asocket.recv(10000)
             packed_size = data[:payload_size]
             data = data[payload_size:]
             msg_size = struct.unpack("L", packed_size)[0]
             while len(data) < msg_size:
-                data += recv_asocket.recv(81920)
+                data += recv_asocket.recv(10000)
             frame_data = data[:msg_size]
             data = data[msg_size:]
             frames = pickle.loads(frame_data)

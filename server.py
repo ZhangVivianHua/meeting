@@ -94,11 +94,11 @@ def meeting_video(meetnum):
         for client_rv in meet['rvc']:
             data = b""
             i=i+1
-            begin=struct.unpack('c',client_rv.recv(1))
+            begin=struct.unpack('ccc',client_rv.recv(3))
             print('收到begin'+str(begin))
-            while begin[0]!=b'C':
-                begin = struct.unpack('c', client_rv.recv(1))
-                print('收到begin' + str(begin[0]))
+            while begin[0]!=b'B' or begin[1]!=b'B' or begin[2]!=b'C':
+                begin = struct.unpack('ccc', client_rv.recv(3))
+                print('收到begin' + str(begin))
             info=struct.unpack('L',client_rv.recv(4))
             print('客户端：'+str(i)+'数据长度:'+str(info[0]))
             data+=client_rv.recv(info[0])

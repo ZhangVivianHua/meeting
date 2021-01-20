@@ -174,7 +174,8 @@ def audio_send():
                 send_asocket.sendall(struct.pack("L", len(senddata)) + senddata)
                 print('发送音频长度：'+str(len(senddata)))
             except:
-                break
+                print('音频收集出错')
+                pass
 
 
 if __name__ == '__main__':

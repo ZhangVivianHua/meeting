@@ -55,7 +55,7 @@ def video_send():
         camera = cv2.VideoCapture(0)  # 从摄像头中获取视频
         img_param = [int(cv2.IMWRITE_JPEG_QUALITY), 15]  # 设置传送图像格式、帧数
         while True:
-            time.sleep(0.1)  # 推迟线程运行0.1s
+            time.sleep(0.01)  # 推迟线程运行0.1s
             _, img = camera.read()  # 读取视频每一帧
             img = cv2.resize(img, (640, 480))  # 按要求调整图像大小(resolution必须为元组)
             _, img_encode = cv2.imencode('.jpg', img, img_param)  # 按格式生成图片
@@ -64,7 +64,8 @@ def video_send():
             try:
                 # 按照相应的格式进行打包发送图片
                 send_vsocket.send(struct.pack("L", len(img_data)))
-                send_vsocket.send(img_data)
+                print('发送数据长度：'+str(len(img_data)))
+                send_vsocket.sendall(img_data)
             except:
                 camera.release()  # 释放资源
 
@@ -77,6 +78,7 @@ def video_recv():
         try:
             buf = b""
             img_info = struct.unpack('LL', recv_vsocket.recv(8))
+            print('接收数据长度：'+str(img_info[0]))
             buf += recv_vsocket.recv(img_info[0])
             data = numpy.frombuffer(buf, dtype='uint8')  # 按uint8转换为图像矩阵
             image = cv2.imdecode(data, 1)  # 图像解码
@@ -84,7 +86,7 @@ def video_recv():
         except:
             pass;
         finally:
-            if (cv2.waitKey(10) == 27):  # 每10ms刷新一次图片，按‘ESC’（27）退出
+            if (cv2.waitKey(1) == 27):  # 每10ms刷新一次图片，按‘ESC’（27）退出
                 cv2.destroyAllWindows()
                 break
 

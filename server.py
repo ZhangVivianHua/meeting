@@ -60,7 +60,7 @@ def listen_state(client):
                 feedback=1
             print('('+str(client.getpeername())+')'+msg)
             client.sendall(msg.encode())
-            client.sendall(bytes(feedback))
+            client.sendall(struct.pack('L',feedback))
             if info[0] != 1 and info[0] != 2:
                 server_socket.close()
                 print('客户端'+str(client.getpeername())+'已退出')
@@ -96,7 +96,10 @@ def meeting_video(meetnum):
             i=i+1
             begin=struct.unpack('c',client_rv.recv(1))
             print('收到begin'+str(begin))
-            while begin[0]!=b'C':
+            while begin[0]!=b'B':
+                begin = struct.unpack('c', client_rv.recv(1))
+                print('收到begin' + str(begin[0]))
+            while begin[0]==b'B':
                 begin = struct.unpack('c', client_rv.recv(1))
                 print('收到begin' + str(begin[0]))
             info=struct.unpack('L',client_rv.recv(4))
@@ -106,7 +109,7 @@ def meeting_video(meetnum):
                 client_sv.send(struct.pack('ccc', b'B',b'B',b'C'))
                 print('发送数据长度：'+str(len(data)))
                 client_sv.send(struct.pack('LL',len(data),i))
-                client_sv.send(data)
+                client_sv.sendall(data)
 
 
 if __name__ == '__main__':

@@ -34,12 +34,12 @@ def connect_server():
         server_socket.sendall(struct.pack('ll', choose, num))
         msg = server_socket.recv(200)
         print(msg.decode())
-        info=server_socket.recv(4).decode()
+        info=struct.unpack('L',server_socket.recv(4))
         if choose != 1 and choose != 2:
             server_socket.close()
             print('程序结束')
             break
-        if info==1:
+        if info[0]==1:
             continue
         else:
             threading.Thread(target=video_send).start()
@@ -57,7 +57,7 @@ def video_send():
         flag = camera.isOpened()
         while flag:
             _, img = camera.read()  # 读取视频每一帧
-            time.sleep(0.01)  # 推迟线程运行0.1s
+            time.sleep(0.05)  # 推迟线程运行0.1s
             if img is None:
                 print('没有读到图片')
                 continue
@@ -84,7 +84,10 @@ def video_recv():
             buf = b""
             begin = struct.unpack('c', recv_vsocket.recv(1))
             print('收到begin' + str(begin))
-            while begin[0]==b'B':
+            while begin[0]!=b'B':
+                begin = struct.unpack('c', recv_vsocket.recv(1))
+                print('收到begin' + str(begin[0]))
+            while begin[0]!=b'C':
                 begin = struct.unpack('c', recv_vsocket.recv(1))
                 print('收到begin' + str(begin[0]))
             img_info = struct.unpack('LL', recv_vsocket.recv(8))

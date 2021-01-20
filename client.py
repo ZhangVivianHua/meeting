@@ -57,11 +57,11 @@ def video_send():
         flag = camera.isOpened()
         while flag:
             _, img = camera.read()  # 读取视频每一帧
-            time.sleep(0.05)  # 推迟线程运行0.1s
+            time.sleep(0.1)  # 推迟线程运行0.1s
             if img is None:
                 print('没有读到图片')
                 continue
-            img = cv2.resize(img, (640, 480))  # 按要求调整图像大小(resolution必须为元组)
+            img = cv2.resize(img, (320, 240))  # 按要求调整图像大小(resolution必须为元组)
             _, img_encode = cv2.imencode('.jpg', img, img_param)  # 按格式生成图片
             img_code = numpy.array(img_encode)  # 转换成矩阵
             img_data = img_code.tobytes()  # 生成相应的字符串

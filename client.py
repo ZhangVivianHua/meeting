@@ -31,10 +31,10 @@ def connect_server():
             num = int(input('请输入会议号：'))
         else:
             num = 0
-        server_socket.sendall(struct.pack('ll', choose, num))
+        server_socket.sendall(struct.pack('hh', choose, num))
         msg = server_socket.recv(200)
         print(msg.decode())
-        info=struct.unpack('L',server_socket.recv(4))
+        info=struct.unpack('h',server_socket.recv(2))
         if choose != 1 and choose != 2:
             server_socket.close()
             print('程序结束')

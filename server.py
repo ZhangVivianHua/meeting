@@ -2,7 +2,7 @@ import socket
 import threading
 import struct
 import time
-ip='117.78.1.190'
+ip='192.168.0.74'
 begin_port=8888
 SP=0
 RV=1
@@ -30,7 +30,7 @@ def listen_contact():
 def listen_state(client):
     while True:
         try:
-            info=struct.unpack('ll',client.recv(8))
+            info=struct.unpack('hh',client.recv(4))
             msg=''
             if info[0] == 1:
                 if len(meets)>=3:
@@ -60,7 +60,7 @@ def listen_state(client):
                 feedback=1
             print('('+str(client.getpeername())+')'+msg)
             client.sendall(msg.encode())
-            client.sendall(struct.pack('L',feedback))
+            client.sendall(struct.pack('h',feedback))
             if info[0] != 1 and info[0] != 2:
                 server_socket.close()
                 print('客户端'+str(client.getpeername())+'已退出')

@@ -98,40 +98,54 @@ def meeting_video(meetnum):
     print(meet)
     while True:
         i=0
+        if len(meet['rvc'])==0:
+            print('会议'+str(meetnum)+'结束')
+            meets.pop(meet)
+            break
         for client_rv in meet['rvc']:
-            data = b""
-            i=i+1
-            begin=struct.unpack('c',client_rv.recv(1))
-            print('收到begin'+str(begin))
-            while True:
-                if begin[0] == b'B':
-                    begin = struct.unpack('c', client_rv.recv(1))
-                    print('收到begin' + str(begin[0]))
-                    if begin[0] == b'C':
-                        break
-                    elif begin[0] != b'B':
-                        e = client_rv.recv(20000)
-                        print('错误信息长度：' + str(len(e)))
+            try:
+                data = b""
+                i=i+1
+                begin=struct.unpack('c',client_rv.recv(1))
+                print('收到begin'+str(begin))
+                while True:
+                    if begin[0] == b'B':
                         begin = struct.unpack('c', client_rv.recv(1))
                         print('收到begin' + str(begin[0]))
-                elif begin[0] != b'B':
-                    e=client_rv.recv(20000)
-                    print('错误信息长度：'+str(len(e)))
-                    begin = struct.unpack('c', client_rv.recv(1))
-                    print('收到begin' + str(begin[0]))
-            info=struct.unpack('h',client_rv.recv(2))
-            print('客户端：'+str(i)+'数据总长度:'+str(info[0]))
-            data+=client_rv.recv(info[0])
-            while len(data)<info[0]:
-                print('本次接收到'+str(len(data))+',再次尝试接收')
-                data+=client_rv.recv(info[0]-len(data))
+                        if begin[0] == b'C':
+                            break
+                        elif begin[0] != b'B':
+                            e = client_rv.recv(20000)
+                            print('错误信息长度：' + str(len(e)))
+                            begin = struct.unpack('c', client_rv.recv(1))
+                            print('收到begin' + str(begin[0]))
+                    elif begin[0] != b'B':
+                        e=client_rv.recv(20000)
+                        print('错误信息长度：'+str(len(e)))
+                        begin = struct.unpack('c', client_rv.recv(1))
+                        print('收到begin' + str(begin[0]))
+                info=struct.unpack('h',client_rv.recv(2))
+                print('客户端：'+client_rv.getpeername()+'数据总长度:'+str(info[0]))
+                data+=client_rv.recv(info[0])
+                while len(data)<info[0]:
+                    print('本次接收到'+str(len(data))+',再次尝试接收')
+                    data+=client_rv.recv(info[0]-len(data))
+            except ConnectionResetError or struct.error:
+                meets[meetnum]['rvc'].remove(client_rv)
+                print('客户端'+client_rv.getpeername()+'视频接收通道连接错误')
+                continue
             for client_sv in meet['svc']:
-                if client_sv.getpeername()[0]==client_rv.getpeername()[0]:# and client_sv.getpeername()[1]==client_rv.getpeername()[1]:
+                try:
+                    if client_sv.getpeername()[0]==client_rv.getpeername()[0]:# and client_sv.getpeername()[1]==client_rv.getpeername()[1]:
+                        continue
+                    client_sv.send(struct.pack('cc',b'B',b'C'))
+                    print('发送数据长度：'+str(len(data)))
+                    client_sv.send(struct.pack('hh',len(data),i))
+                    client_sv.sendall(data)
+                except ConnectionResetError or struct.error:
+                    meets[meetnum]['svc'].remove(client_sv)
+                    print('客户端'+client_sv.getpeername()+'视频发送通道连接错误')
                     continue
-                client_sv.send(struct.pack('cc',b'B',b'C'))
-                print('发送数据长度：'+str(len(data)))
-                client_sv.send(struct.pack('hh',len(data),i))
-                client_sv.sendall(data)
 
 
 def meeting_audio(meetnum):

@@ -164,7 +164,7 @@ def audio_send():
     print('成功连接音频发送通道')
     while True:
         stream = p.open(format=FORMAT, channels=CHANNELS, rate=RATE, input=True, frames_per_buffer=CHUNK)
-        while stream.is_active():
+        while True:
             frames = []
             for i in range(0, int(RATE / CHUNK * RECORD_SECONDS)):
                 data = stream.read(CHUNK)
@@ -175,7 +175,6 @@ def audio_send():
                 print('发送音频长度：'+str(len(senddata)))
             except:
                 print('音频收集出错')
-                pass
 
 
 if __name__ == '__main__':

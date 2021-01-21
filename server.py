@@ -85,12 +85,15 @@ def listen_state(client):
             clients.remove(client)
             print('客户端' + str(client.getpeername()) + '已退出')
             client.close()
-            time.sleep(1)
-            for meet in meets.keys():
-                if meets[meet]['origin'] == client:
-                    meets.pop(meet)
-                elif client in meets[meet]['member']:
-                    meets[meet]['member'].remove(client)
+            try:
+                for meet in meets.keys():
+                    if meets[meet]['origin'] == client:
+                        meets.pop(meet)
+                    elif client in meets[meet]['member']:
+                        meets[meet]['member'].remove(client)
+            except RuntimeError:
+                pass
+            print('客户端线程结束')
             break
 
 
@@ -100,9 +103,11 @@ def meeting_video(meetnum):
     while True:
         print('视频进行中')
         i=0
-        if len(meet['rvc'])==0 and len(meet['svc'])==0:
-            print('会议'+str(meetnum)+'结束')
-            meets.pop(meet)
+        if len(meet['rvc'])==0 and len(meet['svc'])==0 or meetnum not in meets.keys():
+            msg = '会议' + str(meetnum) + '视频结束'
+            print(msg)
+            if meetnum in meets:
+                meets.pop(meet)
             break
         for client_rv in meet['rvc']:
             try:
@@ -133,22 +138,21 @@ def meeting_video(meetnum):
                     print('本次接收到'+str(len(data))+',再次尝试接收')
                     data+=client_rv.recv(info[0]-len(data))
             except ConnectionResetError or struct.error:
-                client_rv.close()
                 meets[meetnum]['rvc'].remove(client_rv)
-                print('客户端'+str(client_rv.getpeername())+'视频接收通道连接错误')
+                print('客户端视频接收通道连接错误')
                 data=b""
             for client_sv in meet['svc']:
                 try:
-                    if client_sv.getpeername()[0]==client_rv.getpeername()[0]:# and client_sv.getpeername()[1]==client_rv.getpeername()[1]:
+                    bol=client_sv.getpeername()[0]==client_rv.getpeername()[0]
+                    if bol:
                         continue
                     client_sv.send(struct.pack('cc',b'B',b'C'))
                     print('发送数据长度：'+str(len(data)))
                     client_sv.send(struct.pack('hh',len(data),i))
                     client_sv.sendall(data)
-                except ConnectionResetError or struct.error:
+                except ConnectionResetError or struct.error or OSError:
                     meets[meetnum]['svc'].remove(client_sv)
-                    client_sv.close()
-                    print('客户端'+str(client_sv.getpeername())+'视频发送通道连接错误')
+                    print('客户端视频发送通道连接错误')
 
 
 def meeting_audio(meetnum):
@@ -156,9 +160,9 @@ def meeting_audio(meetnum):
     print(meet)
     while True:
         print('音频进行中')
-        if len(meet['rac'])==0 and len(meet['sac'])==0:
-            print('会议'+str(meetnum)+'结束')
-            meets.pop(meet)
+        if len(meet['rac'])==0 and len(meet['sac'])==0 or meetnum not in meets.keys():
+            msg = '会议' + str(meetnum) + '音频结束'
+            print(msg)
             break
         for client_ra in meet['rac']:
             try:
@@ -166,19 +170,18 @@ def meeting_audio(meetnum):
                 print('收到音频长度：'+str(len(content)))
             except ConnectionResetError or struct.error:
                 meets[meetnum]['rac'].remove(client_ra)
-                client_ra.close()
-                print('客户端'+str(client_ra.getpeername())+'音频接收通道连接错误')
+                print('客户端音频接收通道连接错误')
                 content=b"a"
             for client_sa in meet['sac']:
                 if content is not None:
                     try:
-                        if client_sa.getpeername()[0] == client_ra.getpeername()[0]:# and client_sa.getpeername()[1] == client_ra.getpeername()[1]:
+                        bol=client_sa.getpeername()[0] == client_ra.getpeername()[0]
+                        if bol:
                             continue
                         client_sa.sendall(content)
-                    except ConnectionResetError or struct.error:
+                    except ConnectionResetError or struct.error or OSError:
                         meets[meetnum]['sac'].remove(client_sa)
-                        client_sa.close()
-                        print('客户端' + str(client_sa.getpeername()) + '音频接收通道连接错误')
+                        print('客户端音频发送通道连接错误')
 
 
 if __name__ == '__main__':

@@ -53,6 +53,7 @@ def connect_server():
             threading.Thread(target=video_recv).start()
             threading.Thread(target=audio_send).start()
             threading.Thread(target=audio_recv).start()
+            # threading.Thread(target=server_msg).start()
             break
 
 
@@ -177,6 +178,12 @@ def audio_send():
                 print('音频发送出错')
         if not stream.is_alive():
             print('音频设备出错')
+
+
+def server_msg():
+    while True:
+        msg=server_socket.recv(200)
+        print(msg.decode())
 
 
 if __name__ == '__main__':

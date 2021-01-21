@@ -98,7 +98,7 @@ def meeting_video(meetnum):
     print(meet)
     while True:
         i=0
-        if len(meet['rvc'])==0 or len(meet['svc'])==0:
+        if len(meet['rvc'])==0 and len(meet['svc'])==0:
             print('会议'+str(meetnum)+'结束')
             meets.pop(meet)
             break
@@ -133,7 +133,7 @@ def meeting_video(meetnum):
             except ConnectionResetError or struct.error:
                 meets[meetnum]['rvc'].remove(client_rv)
                 print('客户端'+client_rv.getpeername()+'视频接收通道连接错误')
-                continue
+                data=b""
             for client_sv in meet['svc']:
                 try:
                     if client_sv.getpeername()[0]==client_rv.getpeername()[0]:# and client_sv.getpeername()[1]==client_rv.getpeername()[1]:
@@ -145,14 +145,13 @@ def meeting_video(meetnum):
                 except ConnectionResetError or struct.error:
                     meets[meetnum]['svc'].remove(client_sv)
                     print('客户端'+client_sv.getpeername()+'视频发送通道连接错误')
-                    continue
 
 
 def meeting_audio(meetnum):
     meet = meets[meetnum]
     print(meet)
     while True:
-        if len(meet['rvc'])==0 or len(meet['svc'])==0:
+        if len(meet['rvc'])==0 and len(meet['svc'])==0:
             print('会议'+str(meetnum)+'结束')
             meets.pop(meet)
             break
@@ -163,7 +162,7 @@ def meeting_audio(meetnum):
             except ConnectionResetError or struct.error:
                 meets[meetnum]['rvc'].remove(client_ra)
                 print('客户端'+client_ra.getpeername()+'视频接收通道连接错误')
-                continue
+                content=b""
             for client_sa in meet['sac']:
                 if content is not None:
                     if client_sa.getpeername()[0] == client_ra.getpeername()[0]:# and client_sa.getpeername()[1] == client_ra.getpeername()[1]:

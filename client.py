@@ -141,22 +141,18 @@ def audio_recv():
     print('成功连接音频接收通道')
     while True:
         data = "".encode("utf-8")
-        payload_size = struct.calcsize("L")
         stream = p.open(format=FORMAT,channels=CHANNELS,rate=RATE,output=True,frames_per_buffer = CHUNK)
-        while True:
-            while len(data) < payload_size:
-                data += recv_asocket.recv(10000)
-            packed_size = data[:payload_size]
-            data = data[payload_size:]
-            msg_size = struct.unpack("L", packed_size)[0]
-            while len(data) < msg_size:
-                data += recv_asocket.recv(10000)
-            frame_data = data[:msg_size]
-            data = data[msg_size:]
-            frames = pickle.loads(frame_data)
-            print('播放音频长度：'+str(len(frame_data)))
-            for frame in frames:
-                stream.write(frame, CHUNK)
+        packed_size = recv_asocket.recv(struct.calcsize("L"))
+        msg_size = struct.unpack("L", packed_size)[0]
+        print('预接收音频长度：'+str(msg_size))
+        data+=recv_asocket.recv(msg_size)
+        while len(data) < msg_size:
+            print('接收到'+str(len(data))+',继续接收')
+            data += recv_asocket.recv(msg_size-len(data))
+        frames = pickle.loads(data)
+        print('播放音频长度：'+str(len(data)))
+        for frame in frames:
+            stream.write(frame, CHUNK)
 
 
 def audio_send():

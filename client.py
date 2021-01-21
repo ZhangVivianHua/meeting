@@ -82,7 +82,7 @@ def video_send():
                     break
             try:
                 # 按照相应的格式进行打包发送图片
-                send_vsocket.send(struct.pack("ccc", b'B',b'B',b'C'))
+                send_vsocket.send(struct.pack("cc", b'B',b'C'))
                 send_vsocket.send(struct.pack("h", len(img_data)))
                 print('发送数据长度：'+str(len(img_data)))
                 send_vsocket.sendall(img_data)
@@ -153,7 +153,7 @@ def audio_recv():
             frame_data = data[:msg_size]
             data = data[msg_size:]
             frames = pickle.loads(frame_data)
-            print('播放音频长度：'+str(len(frames)))
+            print('播放音频长度：'+str(len(frame_data)))
             for frame in frames:
                 stream.write(frame, CHUNK)
 
@@ -174,7 +174,9 @@ def audio_send():
                 send_asocket.sendall(struct.pack("L", len(senddata)) + senddata)
                 print('发送音频长度：'+str(len(senddata)))
             except:
-                print('音频收集出错')
+                print('音频发送出错')
+        if not stream.is_alive():
+            print('音频设备出错')
 
 
 if __name__ == '__main__':

@@ -7,7 +7,7 @@ import pickle
 import time
 import numpy
 import pyaudio
-ip='117.78.1.190'
+ip='192.168.43.99'
 begin_port=8888
 SP=0
 SV=1
@@ -99,11 +99,11 @@ def video_recv():
         try:
             buf = b""
             begin = struct.unpack('c', recv_vsocket.recv(1))
-            print('收到begin' + str(begin))
+            # print('收到begin' + str(begin))
             while True:
                 if begin[0]==b'B':
                     begin = struct.unpack('c', recv_vsocket.recv(1))
-                    print('收到begin' + str(begin[0]))
+                    # print('收到begin' + str(begin[0]))
                     if begin[0]==b'C':
                         break
                     elif begin[0]!=b'B':
@@ -118,10 +118,10 @@ def video_recv():
                     print('收到begin' + str(begin[0]))
 
             img_info = struct.unpack('hh', recv_vsocket.recv(4))
-            print('接收数据长度：'+str(img_info[0]))
+            # print('接收数据长度：'+str(img_info[0]))
             buf += recv_vsocket.recv(img_info[0])
             while len(buf) < img_info[0]:
-                print('本次接收到' + str(len(buf)) + ',再次尝试接收')
+                # print('本次接收到' + str(len(buf)) + ',再次尝试接收')
                 buf += recv_vsocket.recv(img_info[0] - len(buf))
             data = numpy.frombuffer(buf, dtype='uint8')  # 按uint8转换为图像矩阵
             image = cv2.imdecode(data, 1)  # 图像解码

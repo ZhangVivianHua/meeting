@@ -2,7 +2,7 @@ import socket
 import threading
 import struct
 import time
-ip='192.168.0.74'
+ip='192.168.43.99'
 begin_port=8888
 SP=0
 RV=1
@@ -132,10 +132,10 @@ def meeting_video(meetnum):
                         begin = struct.unpack('c', client_rv.recv(1))
                         print('收到begin' + str(begin[0]))
                 info=struct.unpack('h',client_rv.recv(2))
-                print('客户端：'+str(client_rv.getpeername())+'数据总长度:'+str(info[0]))
+                # print('客户端：'+str(client_rv.getpeername())+'数据总长度:'+str(info[0]))
                 data+=client_rv.recv(info[0])
                 while len(data)<info[0]:
-                    print('本次接收到'+str(len(data))+',再次尝试接收')
+                    # print('本次接收到'+str(len(data))+',再次尝试接收')
                     data+=client_rv.recv(info[0]-len(data))
             except ConnectionResetError or struct.error:
                 meets[meetnum]['rvc'].remove(client_rv)
@@ -147,7 +147,7 @@ def meeting_video(meetnum):
                     if bol:
                         continue
                     client_sv.send(struct.pack('cc',b'B',b'C'))
-                    print('发送数据长度：'+str(len(data)))
+                    # print('发送数据长度：'+str(len(data)))
                     client_sv.send(struct.pack('hh',len(data),i))
                     client_sv.sendall(data)
                 except ConnectionResetError or struct.error or OSError:
@@ -166,19 +166,25 @@ def meeting_audio(meetnum):
             break
         for client_ra in meet['rac']:
             try:
-                content=client_ra.recv(100000)
-                print('收到音频长度：'+str(len(content)))
+                packed_size = client_ra.recv(struct.calcsize("L"))
+                msg_size = struct.unpack("L", packed_size)[0]
+                print('预接收音频长度：'+str(msg_size))
+                data = client_ra.recv(msg_size)
+                while len(data) < msg_size:
+                    print('接收到' + str(len(data)) + ',继续接收')
+                    data += client_ra.recv(msg_size - len(data))
+                print('收到音频长度：'+str(len(data)))
             except ConnectionResetError or struct.error:
                 meets[meetnum]['rac'].remove(client_ra)
                 print('客户端音频接收通道连接错误')
-                content=b"a"
+                data=b"a"
             for client_sa in meet['sac']:
-                if content is not None:
+                if data is not None:
                     try:
                         bol=client_sa.getpeername()[0] == client_ra.getpeername()[0]
                         if bol:
                             continue
-                        client_sa.sendall(content)
+                        client_sa.sendall(data)
                     except ConnectionResetError or struct.error or OSError:
                         meets[meetnum]['sac'].remove(client_sa)
                         print('客户端音频发送通道连接错误')

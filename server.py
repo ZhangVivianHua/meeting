@@ -2,7 +2,8 @@ import socket
 import threading
 import struct
 import time
-ip='192.168.43.99'
+import datetime
+ip='192.168.0.74'
 begin_port=8888
 SP=0
 RV=1
@@ -80,19 +81,21 @@ def listen_state(client):
                 print('客户端音频接收通道已连接,客户端socket：' + str(clientra))
                 if feedback==2:
                     threading.Thread(target=meeting_video,args=(info[1],)).start()
-                    threading.Thread(target=meeting_audio,args=(info[1],)).start()
+                threading.Thread(target=meeting_audio, args=(info[1], clientra, clientsa)).start()
         except ConnectionResetError or struct.error:
             clients.remove(client)
             print('客户端' + str(client.getpeername()) + '已退出')
-            client.close()
             try:
                 for meet in meets.keys():
                     if meets[meet]['origin'] == client:
                         meets.pop(meet)
                     elif client in meets[meet]['member']:
                         meets[meet]['member'].remove(client)
+                        for member in meets[meet]['member']:
+                            member.send(('客户端' + str(client.getpeername()) + '已退出').encode())
             except RuntimeError:
                 pass
+            client.close()
             print('客户端线程结束')
             break
 
@@ -155,7 +158,7 @@ def meeting_video(meetnum):
                     print('客户端视频发送通道连接错误')
 
 
-def meeting_audio(meetnum):
+def meeting_audio(meetnum,client_ra,client_sac):
     meet = meets[meetnum]
     print(meet)
     while True:
@@ -164,31 +167,30 @@ def meeting_audio(meetnum):
             msg = '会议' + str(meetnum) + '音频结束'
             print(msg)
             break
-        for client_ra in meet['rac']:
-            try:
-                packed_size = client_ra.recv(struct.calcsize("L"))
-                msg_size = struct.unpack("L", packed_size)[0]
-                print('预接收音频长度：'+str(msg_size))
-                data = client_ra.recv(msg_size)
-                while len(data) < msg_size:
-                    print('接收到' + str(len(data)) + ',继续接收')
-                    data += client_ra.recv(msg_size - len(data))
-                print('收到音频长度：'+str(len(data)))
-            except ConnectionResetError or struct.error:
-                meets[meetnum]['rac'].remove(client_ra)
-                print('客户端音频接收通道连接错误')
-                data=b"a"
-            for client_sa in meet['sac']:
-                if data is not None:
-                    try:
-                        bol=client_sa.getpeername()[0] == client_ra.getpeername()[0]
-                        if bol:
-                            continue
-                        client_sa.sendall(struct.pack("L", len(data)))
-                        client_sa.sendall(data)
-                    except ConnectionResetError or struct.error or OSError:
-                        meets[meetnum]['sac'].remove(client_sa)
-                        print('客户端音频发送通道连接错误')
+        try:
+            packed_size = client_ra.recv(struct.calcsize("L"))
+            msg_size = struct.unpack("L", packed_size)[0]
+            print(str(datetime.datetime.now().time())+'预接收音频长度：'+str(msg_size))
+            data = client_ra.recv(msg_size)
+            while len(data) < msg_size:
+                print('接收到' + str(len(data)) + ',继续接收')
+                data += client_ra.recv(msg_size - len(data))
+            print('收到音频长度：'+str(len(data)))
+        except ConnectionResetError or struct.error:
+            meets[meetnum]['rac'].remove(client_ra)
+            print('客户端音频接收通道连接错误')
+            data=b"a"
+        for client_sa in meet['sac']:
+            if data is not None:
+                try:
+                    bol=client_sa is client_sac
+                    if bol:
+                        continue
+                    client_sa.sendall(struct.pack("L", len(data)))
+                    client_sa.sendall(data)
+                except ConnectionResetError or struct.error or OSError:
+                    meets[meetnum]['sac'].remove(client_sa)
+                    print('客户端音频发送通道连接错误')
 
 
 if __name__ == '__main__':

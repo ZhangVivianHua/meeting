@@ -169,7 +169,7 @@ def audio_send():
                 frames.append(data)
             senddata = pickle.dumps(frames)
             try:
-                send_asocket.sendall(struct.pack("L", len(senddata)) + senddata)
+                send_asocket.sendall(struct.pack("h", len(senddata)) + senddata)
                 print('发送音频长度：'+str(len(senddata)))
             except:
                 print('音频发送出错')

@@ -143,8 +143,8 @@ def audio_recv():
         stream = p.open(format=FORMAT,channels=CHANNELS,rate=RATE,output=True,frames_per_buffer = CHUNK)
         while stream.is_active():
             data = "".encode("utf-8")
-            packed_size = recv_asocket.recv(struct.calcsize("L"))
-            msg_size = struct.unpack("L", packed_size)[0]
+            packed_size = recv_asocket.recv(struct.calcsize("h"))
+            msg_size = struct.unpack("h", packed_size)[0]
             print('预接收音频长度：'+str(msg_size))
             data+=recv_asocket.recv(msg_size)
             while len(data) < msg_size:

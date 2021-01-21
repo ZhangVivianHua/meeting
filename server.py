@@ -168,8 +168,8 @@ def meeting_audio(meetnum,client_ra,client_sac):
             print(msg)
             break
         try:
-            packed_size = client_ra.recv(struct.calcsize("L"))
-            msg_size = struct.unpack("L", packed_size)[0]
+            packed_size = client_ra.recv(struct.calcsize("h"))
+            msg_size = struct.unpack("h", packed_size)[0]
             print(str(datetime.datetime.now().time())+'预接收音频长度：'+str(msg_size))
             data = client_ra.recv(msg_size)
             while len(data) < msg_size:
@@ -186,7 +186,7 @@ def meeting_audio(meetnum,client_ra,client_sac):
                     bol=client_sa is client_sac
                     if bol:
                         continue
-                    client_sa.sendall(struct.pack("L", len(data)))
+                    client_sa.sendall(struct.pack("h", len(data)))
                     client_sa.sendall(data)
                 except ConnectionResetError or struct.error or OSError:
                     meets[meetnum]['sac'].remove(client_sa)

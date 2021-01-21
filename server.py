@@ -98,7 +98,7 @@ def meeting_video(meetnum):
     print(meet)
     while True:
         i=0
-        if len(meet['rvc'])==0:
+        if len(meet['rvc'])==0 or len(meet['svc'])==0:
             print('会议'+str(meetnum)+'结束')
             meets.pop(meet)
             break
@@ -152,14 +152,28 @@ def meeting_audio(meetnum):
     meet = meets[meetnum]
     print(meet)
     while True:
+        if len(meet['rvc'])==0 or len(meet['svc'])==0:
+            print('会议'+str(meetnum)+'结束')
+            meets.pop(meet)
+            break
         for client_ra in meet['rac']:
-            content=client_ra.recv(100000)
-            print('收到音频长度：'+str(len(content)))
+            try:
+                content=client_ra.recv(100000)
+                print('收到音频长度：'+str(len(content)))
+            except ConnectionResetError or struct.error:
+                meets[meetnum]['rvc'].remove(client_ra)
+                print('客户端'+client_ra.getpeername()+'视频接收通道连接错误')
+                continue
             for client_sa in meet['sac']:
                 if content is not None:
                     if client_sa.getpeername()[0] == client_ra.getpeername()[0]:# and client_sa.getpeername()[1] == client_ra.getpeername()[1]:
                         continue
-                    client_sa.sendall(content)
+                    try:
+                        client_sa.sendall(content)
+                    except ConnectionResetError or struct.error:
+                        meets[meetnum]['rvc'].remove(client_sa)
+                        print('客户端' + client_sa.getpeername() + '视频接收通道连接错误')
+                        continue
 
 
 if __name__ == '__main__':

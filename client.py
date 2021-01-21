@@ -23,7 +23,7 @@ CHUNK = 1024
 FORMAT = pyaudio.paInt16
 CHANNELS = 2
 RATE = 8000
-RECORD_SECONDS = 0.3
+RECORD_SECONDS = 0.05
 stream = None
 p = pyaudio.PyAudio()
 
@@ -85,7 +85,7 @@ def video_send():
                 # 按照相应的格式进行打包发送图片
                 send_vsocket.send(struct.pack("cc", b'B',b'C'))
                 send_vsocket.send(struct.pack("h", len(img_data)))
-                print('发送数据长度：'+str(len(img_data)))
+                #print('发送数据长度：'+str(len(img_data)))
                 send_vsocket.sendall(img_data)
             except:
                 camera.release()

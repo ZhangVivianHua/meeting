@@ -101,7 +101,7 @@ def meeting_video(meetnum):
     meet=meets[meetnum]
     print(meet)
     while True:
-        print('视频进行中')
+        # print('视频进行中')
         i=0
         if len(meet['rvc'])==0 and len(meet['svc'])==0 or meetnum not in meets.keys():
             msg = '会议' + str(meetnum) + '视频结束'
@@ -114,18 +114,18 @@ def meeting_video(meetnum):
                 data = b""
                 i=i+1
                 begin=struct.unpack('c',client_rv.recv(1))
-                print('收到begin'+str(begin))
+                #print('收到begin'+str(begin))
                 while True:
                     if begin[0] == b'B':
                         begin = struct.unpack('c', client_rv.recv(1))
-                        print('收到begin' + str(begin[0]))
+                        #print('收到begin' + str(begin[0]))
                         if begin[0] == b'C':
                             break
                         elif begin[0] != b'B':
                             e = client_rv.recv(20000)
                             print('错误信息长度：' + str(len(e)))
                             begin = struct.unpack('c', client_rv.recv(1))
-                            print('收到begin' + str(begin[0]))
+                            #print('收到begin' + str(begin[0]))
                     elif begin[0] != b'B':
                         e=client_rv.recv(20000)
                         print('错误信息长度：'+str(len(e)))
@@ -184,6 +184,7 @@ def meeting_audio(meetnum):
                         bol=client_sa.getpeername()[0] == client_ra.getpeername()[0]
                         if bol:
                             continue
+                        client_sa.sendall(struct.pack("L", len(data)))
                         client_sa.sendall(data)
                     except ConnectionResetError or struct.error or OSError:
                         meets[meetnum]['sac'].remove(client_sa)

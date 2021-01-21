@@ -7,7 +7,7 @@ import pickle
 import time
 import numpy
 import pyaudio
-ip='117.78.1.190'
+ip='192.168.43.99'
 begin_port=8888
 SP=0
 SV=1
@@ -53,7 +53,7 @@ def connect_server():
             threading.Thread(target=video_recv).start()
             threading.Thread(target=audio_send).start()
             threading.Thread(target=audio_recv).start()
-            # threading.Thread(target=server_msg).start()
+            threading.Thread(target=server_msg).start()
             break
 
 
@@ -145,13 +145,13 @@ def audio_recv():
             data = "".encode("utf-8")
             packed_size = recv_asocket.recv(struct.calcsize("h"))
             msg_size = struct.unpack("h", packed_size)[0]
-            print('预接收音频长度：'+str(msg_size))
+            #print('预接收音频长度：'+str(msg_size))
             data+=recv_asocket.recv(msg_size)
             while len(data) < msg_size:
-                print('接收到'+str(len(data))+',继续接收')
+                #print('接收到'+str(len(data))+',继续接收')
                 data += recv_asocket.recv(msg_size-len(data))
             frames = pickle.loads(data)
-            print('播放音频长度：'+str(len(data)))
+            #print('播放音频长度：'+str(len(data)))
             for frame in frames:
                 stream.write(frame, CHUNK)
 
@@ -170,7 +170,7 @@ def audio_send():
             senddata = pickle.dumps(frames)
             try:
                 send_asocket.sendall(struct.pack("h", len(senddata)) + senddata)
-                print('发送音频长度：'+str(len(senddata)))
+                #print('发送音频长度：'+str(len(senddata)))
             except:
                 print('音频发送出错')
 

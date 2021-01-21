@@ -23,7 +23,7 @@ CHUNK = 1024
 FORMAT = pyaudio.paInt16
 CHANNELS = 2
 RATE = 8000
-RECORD_SECONDS = 0.05
+RECORD_SECONDS = 0.3
 stream = None
 p = pyaudio.PyAudio()
 
@@ -140,19 +140,20 @@ def audio_recv():
     recv_asocket.connect((ip, recv_aport))
     print('成功连接音频接收通道')
     while True:
-        data = "".encode("utf-8")
         stream = p.open(format=FORMAT,channels=CHANNELS,rate=RATE,output=True,frames_per_buffer = CHUNK)
-        packed_size = recv_asocket.recv(struct.calcsize("L"))
-        msg_size = struct.unpack("L", packed_size)[0]
-        print('预接收音频长度：'+str(msg_size))
-        data+=recv_asocket.recv(msg_size)
-        while len(data) < msg_size:
-            print('接收到'+str(len(data))+',继续接收')
-            data += recv_asocket.recv(msg_size-len(data))
-        frames = pickle.loads(data)
-        print('播放音频长度：'+str(len(data)))
-        for frame in frames:
-            stream.write(frame, CHUNK)
+        while stream.is_active():
+            data = "".encode("utf-8")
+            packed_size = recv_asocket.recv(struct.calcsize("L"))
+            msg_size = struct.unpack("L", packed_size)[0]
+            print('预接收音频长度：'+str(msg_size))
+            data+=recv_asocket.recv(msg_size)
+            while len(data) < msg_size:
+                print('接收到'+str(len(data))+',继续接收')
+                data += recv_asocket.recv(msg_size-len(data))
+            frames = pickle.loads(data)
+            print('播放音频长度：'+str(len(data)))
+            for frame in frames:
+                stream.write(frame, CHUNK)
 
 
 def audio_send():
@@ -161,7 +162,7 @@ def audio_send():
     print('成功连接音频发送通道')
     while True:
         stream = p.open(format=FORMAT, channels=CHANNELS, rate=RATE, input=True, frames_per_buffer=CHUNK)
-        while True:
+        while stream.is_active():
             frames = []
             for i in range(0, int(RATE / CHUNK * RECORD_SECONDS)):
                 data = stream.read(CHUNK)
@@ -172,8 +173,6 @@ def audio_send():
                 print('发送音频长度：'+str(len(senddata)))
             except:
                 print('音频发送出错')
-        if not stream.is_alive():
-            print('音频设备出错')
 
 
 def server_msg():

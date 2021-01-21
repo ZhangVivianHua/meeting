@@ -128,7 +128,7 @@ def meeting_video(meetnum):
             for client_sv in meet['svc']:
                 if client_sv.getpeername()[0]==client_rv.getpeername()[0]:# and client_sv.getpeername()[1]==client_rv.getpeername()[1]:
                     continue
-                client_sv.send(struct.pack('ccc', b'B',b'B',b'C'))
+                client_sv.send(struct.pack('cc',b'B',b'C'))
                 print('发送数据长度：'+str(len(data)))
                 client_sv.send(struct.pack('hh',len(data),i))
                 client_sv.sendall(data)

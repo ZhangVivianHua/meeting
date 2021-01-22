@@ -29,6 +29,7 @@ def listen_contact():
 
 
 def listen_state(client):
+    client_name = str(client.getpeername())
     while True:
         try:
             info=struct.unpack('hh',client.recv(4))
@@ -38,12 +39,12 @@ def listen_state(client):
                     msg='系统超过100个会议，不能再创建新会议了'
                     feedback=1
                 else:
-                    msg='用户新建了一个视频会议'+str(info[1])
+                    msg='用户'+client_name+'新建了一个视频会议'+str(info[1])
                     meet={'origin':client,'member':[client,],'rvc':[],'svc':[],'rac':[],'sac':[]}
                     meets[info[1]]=meet
                     feedback=2
             elif info[0]==2:
-                msg='用户想要加入一个视频会议'+str(info[1])
+                msg='用户'+client_name+'想要加入一个视频会议'+str(info[1])
                 if info[1] in meets.keys():
                     if len(meets[info[1]]['member'])>=5:
                         msg+='\n超过5人，拒绝加入'
@@ -56,15 +57,15 @@ def listen_state(client):
                     msg+='\n该会议不存在！'
                     feedback=1
             else:
-                msg='退出系统'
+                msg='用户'+client_name+'退出系统'
                 clients.remove(client)
                 feedback=1
-            print('('+str(client.getpeername())+')'+msg)
+            print('('+client_name+')'+msg)
             client.sendall(msg.encode())
             client.sendall(struct.pack('h',feedback))
             if info[0] != 1 and info[0] != 2:
                 client.close()
-                print('客户端'+str(client.getpeername())+'已退出')
+                print('客户端'+client_name+'已退出')
                 break
             if feedback!=1:
                 clientrv, rvD_addr = server_list[1].accept()
@@ -83,18 +84,18 @@ def listen_state(client):
                     threading.Thread(target=meeting_video,args=(info[1],)).start()
                 threading.Thread(target=meeting_audio, args=(info[1], clientra, clientsa)).start()
                 for member in meets[info[1]]['member']:
-                    member.send(('客户端' + str(client.getpeername()) + '已加入').encode())
+                    member.send(('客户端'+client_name+'已加入').encode())
         except ConnectionResetError or struct.error:
             clients.remove(client)
             try:
-                print('客户端' + str(client.getpeername()) + '已退出')
+                print('客户端'+client_name+'已退出')
                 for meet in meets.keys():
                     if meets[meet]['origin'] == client:
                         meets.pop(meet)
                     elif client in meets[meet]['member']:
                         meets[meet]['member'].remove(client)
                         for member in meets[meet]['member']:
-                            member.send(('客户端' + str(client.getpeername()) + '已退出').encode())
+                            member.send(('客户端'+client_name+'已退出').encode())
             except RuntimeError or OSError:
                 pass
             client.close()

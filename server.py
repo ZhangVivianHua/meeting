@@ -86,8 +86,8 @@ def listen_state(client):
                     member.send(('客户端' + str(client.getpeername()) + '已加入').encode())
         except ConnectionResetError or struct.error:
             clients.remove(client)
-            print('客户端' + str(client.getpeername()) + '已退出')
             try:
+                print('客户端' + str(client.getpeername()) + '已退出')
                 for meet in meets.keys():
                     if meets[meet]['origin'] == client:
                         meets.pop(meet)
@@ -95,7 +95,7 @@ def listen_state(client):
                         meets[meet]['member'].remove(client)
                         for member in meets[meet]['member']:
                             member.send(('客户端' + str(client.getpeername()) + '已退出').encode())
-            except RuntimeError:
+            except RuntimeError or OSError:
                 pass
             client.close()
             print('客户端线程结束')

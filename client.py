@@ -75,7 +75,7 @@ def video_send():
             _, img_encode = cv2.imencode('.jpg', img, img_param)  # 按格式生成图片
             img_code = numpy.array(img_encode)  # 转换成矩阵
             img_data = img_code.tobytes()
-            width, height, deep = img.shape
+            '''width, height, deep = img.shape
             img_key = numpy.random.randint(0, 256, size=[width, height, deep], dtype=numpy.uint8)
             img_ency = cv2.bitwise_xor(img, img_key)
             _, key_encode = cv2.imencode('.jpg', img_key, img_param)  # 按格式生成图片
@@ -83,9 +83,9 @@ def video_send():
             key_data = key_code.tobytes()  # 生成相应的字符串
             _, imgc_encode = cv2.imencode('.jpg', img_ency, img_param)  # 按格式生成图片
             imgc_code = numpy.array(imgc_encode)  # 转换成矩阵
-            imgc_data = imgc_code.tobytes()  # 生成相应的字符串
+            imgc_data = imgc_code.tobytes()  # 生成相应的字符串'''
             try:
-                cv2.imshow("encryption",cv2.imdecode(imgc_encode, 1))
+                #cv2.imshow("encryption",cv2.imdecode(imgc_encode, 1))
                 cv2.imshow('myself', img)
             finally:
                 if (cv2.waitKey(5) == 27):  # 每10ms刷新一次图片，按‘ESC’（27）退出

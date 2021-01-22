@@ -106,7 +106,7 @@ def meeting_video(meetnum):
     meet=meets[meetnum]
     print(meet)
     while True:
-        print('视频进行中')
+        #print('视频进行中')
         i=0
         if len(meet['rvc'])==0 and len(meet['svc'])==0 or meetnum not in meets.keys():
             msg = '会议' + str(meetnum) + '视频结束'
@@ -164,7 +164,7 @@ def meeting_audio(meetnum,client_ra,client_sac):
     meet = meets[meetnum]
     print(meet)
     while True:
-        print('音频进行中')
+        #print('音频进行中')
         if len(meet['rac'])==0 and len(meet['sac'])==0 or meetnum not in meets.keys():
             msg = '会议' + str(meetnum) + '音频结束'
             print(msg)

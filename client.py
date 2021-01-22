@@ -7,7 +7,7 @@ import pickle
 import time
 import numpy
 import pyaudio
-ip='117.78.1.190'
+ip='192.168.43.99'
 begin_port=8888
 SP=0
 SV=1
@@ -98,7 +98,7 @@ def video_send():
                 send_vsocket.sendall(key_data)'''
                 send_vsocket.send(struct.pack("cc", b'B', b'C'))
                 send_vsocket.send(struct.pack("h", len(img_data)))
-                #print('发送数据长度：'+str(len(img_data)))
+                print('发送数据长度：'+str(len(img_data)))
                 send_vsocket.sendall(img_data)
             except:
                 camera.release()
@@ -114,7 +114,7 @@ def video_recv():
             for i in range(1):#2
                 buf = b""
                 begin = struct.unpack('c', recv_vsocket.recv(1))
-                #print('收到begin' + str(begin))
+                print('收到begin' + str(begin))
                 while True:
                     if begin[0]==b'B':
                         begin = struct.unpack('c', recv_vsocket.recv(1))
@@ -123,14 +123,14 @@ def video_recv():
                             break
                         elif begin[0]!=b'B':
                             e=recv_vsocket.recv(20000)
-                            #print('错误信息长度：'+str(len(e)))
+                            print('错误信息长度：'+str(len(e)))
                             begin = struct.unpack('c', recv_vsocket.recv(1))
-                            #print('收到begin' + str(begin[0]))
+                            print('收到begin' + str(begin[0]))
                     elif begin[0] != b'B':
                         e=recv_vsocket.recv(20000)
-                        #print('错误信息长度：'+str(len(e)))
+                        print('错误信息长度：'+str(len(e)))
                         begin = struct.unpack('c', recv_vsocket.recv(1))
-                        #print('收到begin' + str(begin[0]))
+                        print('收到begin' + str(begin[0]))
 
                 img_info = struct.unpack('hh', recv_vsocket.recv(4))
                 # print('接收数据长度：'+str(img_info[0]))
@@ -146,7 +146,7 @@ def video_recv():
             #cv2.imshow('user' + str(img_info[1]),img_decrypt)
         except:
             print('接收数据出错')
-            pass
+            pass;
         finally:
             if cv2.waitKey(1) == 27:  # 每10ms刷新一次图片，按‘ESC’（27）退出
                 cv2.destroyAllWindows()
@@ -204,3 +204,5 @@ if __name__ == '__main__':
     server_socket.connect((ip,state_port))
     print('成功连接服务器')
     threading.Thread(target=connect_server).start()
+
+

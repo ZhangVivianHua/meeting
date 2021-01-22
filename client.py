@@ -14,11 +14,6 @@ SV=1
 RV=2
 SA=3
 RA=4
-state_port=begin_port+SP
-send_vport=begin_port+SV
-recv_vport=begin_port+RV
-send_aport=begin_port+SA
-recv_aport=begin_port+RA
 CHUNK = 1024
 FORMAT = pyaudio.paInt16
 CHANNELS = 2
@@ -200,6 +195,15 @@ def server_msg():
 
 
 if __name__ == '__main__':
+    with open('client_ini.txt') as server:
+        lines=server.readlines()
+        ip=lines[0]
+        begin_port=int(lines[1])
+    state_port = begin_port + SP
+    send_vport = begin_port + SV
+    recv_vport = begin_port + RV
+    send_aport = begin_port + SA
+    recv_aport = begin_port + RA
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.connect((ip,state_port))
     print('成功连接服务器')

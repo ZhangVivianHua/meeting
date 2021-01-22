@@ -35,8 +35,8 @@ def listen_state(client):
             info=struct.unpack('hh',client.recv(4))
             msg=''
             if info[0] == 1:
-                if len(meets)>=100:
-                    msg='系统超过100个会议，不能再创建新会议了'
+                if len(meets)>=3:
+                    msg='系统超过3个会议，不能再创建新会议了'
                     feedback=1
                 else:
                     msg='用户'+client_name+'新建了一个视频会议'+str(info[1])

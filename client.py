@@ -74,18 +74,31 @@ def video_send():
             img = cv2.resize(img, (640, 480))  # 按要求调整图像大小(resolution必须为元组)
             _, img_encode = cv2.imencode('.jpg', img, img_param)  # 按格式生成图片
             img_code = numpy.array(img_encode)  # 转换成矩阵
-            img_data = img_code.tobytes()  # 生成相应的字符串
+            img_data = img_code.tobytes()
+            width, height, deep = img.shape
+            img_key = numpy.random.randint(0, 256, size=[width, height, deep], dtype=numpy.uint8)
+            img_ency = cv2.bitwise_xor(img, img_key)
+            _, key_encode = cv2.imencode('.jpg', img_key, img_param)  # 按格式生成图片
+            key_code = numpy.array(key_encode)  # 转换成矩阵
+            key_data = key_code.tobytes()  # 生成相应的字符串
+            _, imgc_encode = cv2.imencode('.jpg', img_ency, img_param)  # 按格式生成图片
+            imgc_code = numpy.array(imgc_encode)  # 转换成矩阵
+            imgc_data = imgc_code.tobytes()  # 生成相应的字符串
             try:
+                cv2.imshow("encryption",cv2.imdecode(imgc_encode, 1))
                 cv2.imshow('myself', img)
             finally:
-                if (cv2.waitKey(1) == 27):  # 每10ms刷新一次图片，按‘ESC’（27）退出
-                    cv2.destroyAllWindows()
+                if (cv2.waitKey(5) == 27):  # 每10ms刷新一次图片，按‘ESC’（27）退出
                     break
             try:
                 # 按照相应的格式进行打包发送图片
-                send_vsocket.send(struct.pack("cc", b'B',b'C'))
+                '''send_vsocket.send(struct.pack("cc", b'B',b'C'))
+                send_vsocket.send(struct.pack("h", len(key_data)))
+                print('发送数据长度：'+str(len(key_data)))
+                send_vsocket.sendall(key_data)'''
+                send_vsocket.send(struct.pack("cc", b'B', b'C'))
                 send_vsocket.send(struct.pack("h", len(img_data)))
-                #print('发送数据长度：'+str(len(img_data)))
+                print('发送数据长度：'+str(len(img_data)))
                 send_vsocket.sendall(img_data)
             except:
                 camera.release()
@@ -97,35 +110,40 @@ def video_recv():
     print('成功连接视频接收通道')
     while True:
         try:
-            buf = b""
-            begin = struct.unpack('c', recv_vsocket.recv(1))
-            # print('收到begin' + str(begin))
-            while True:
-                if begin[0]==b'B':
-                    begin = struct.unpack('c', recv_vsocket.recv(1))
-                    # print('收到begin' + str(begin[0]))
-                    if begin[0]==b'C':
-                        break
-                    elif begin[0]!=b'B':
+            key_and_image=[]
+            for i in range(1):#2
+                buf = b""
+                begin = struct.unpack('c', recv_vsocket.recv(1))
+                print('收到begin' + str(begin))
+                while True:
+                    if begin[0]==b'B':
+                        begin = struct.unpack('c', recv_vsocket.recv(1))
+                        # print('收到begin' + str(begin[0]))
+                        if begin[0]==b'C':
+                            break
+                        elif begin[0]!=b'B':
+                            e=recv_vsocket.recv(20000)
+                            print('错误信息长度：'+str(len(e)))
+                            begin = struct.unpack('c', recv_vsocket.recv(1))
+                            print('收到begin' + str(begin[0]))
+                    elif begin[0] != b'B':
                         e=recv_vsocket.recv(20000)
                         print('错误信息长度：'+str(len(e)))
                         begin = struct.unpack('c', recv_vsocket.recv(1))
                         print('收到begin' + str(begin[0]))
-                elif begin[0] != b'B':
-                    e=recv_vsocket.recv(20000)
-                    print('错误信息长度：'+str(len(e)))
-                    begin = struct.unpack('c', recv_vsocket.recv(1))
-                    print('收到begin' + str(begin[0]))
 
-            img_info = struct.unpack('hh', recv_vsocket.recv(4))
-            # print('接收数据长度：'+str(img_info[0]))
-            buf += recv_vsocket.recv(img_info[0])
-            while len(buf) < img_info[0]:
-                # print('本次接收到' + str(len(buf)) + ',再次尝试接收')
-                buf += recv_vsocket.recv(img_info[0] - len(buf))
-            data = numpy.frombuffer(buf, dtype='uint8')  # 按uint8转换为图像矩阵
-            image = cv2.imdecode(data, 1)  # 图像解码
-            cv2.imshow('user' + str(img_info[1]), image)
+                img_info = struct.unpack('hh', recv_vsocket.recv(4))
+                # print('接收数据长度：'+str(img_info[0]))
+                buf += recv_vsocket.recv(img_info[0])
+                while len(buf) < img_info[0]:
+                    # print('本次接收到' + str(len(buf)) + ',再次尝试接收')
+                    buf += recv_vsocket.recv(img_info[0] - len(buf))
+                data = numpy.frombuffer(buf, dtype='uint8')  # 按uint8转换为图像矩阵
+                image = cv2.imdecode(data, 1)  # 图像解码
+                cv2.imshow('user' + str(img_info[1]),image)
+                #key_and_image.append(image)
+            #img_decrypt = cv2.bitwise_xor(key_and_image[0], key_and_image[1])
+            #cv2.imshow('user' + str(img_info[1]),img_decrypt)
         except:
             print('接收数据出错')
             pass;

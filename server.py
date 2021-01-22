@@ -10,6 +10,11 @@ RV=1
 SV=2
 RA=3
 SA=4
+state_port=begin_port+SP
+recv_vport=begin_port+RV
+send_vport=begin_port+SV
+recv_aport=begin_port+RA
+send_aport=begin_port+SA
 clients=[]
 meets={}
 
@@ -192,15 +197,6 @@ def meeting_audio(meetnum,client_ra,client_sac):
 
 
 if __name__ == '__main__':
-    with open('server_ini.txt') as server:
-        lines=server.readlines()
-        ip=lines[0]
-        begin_port=int(lines[1])
-    state_port = begin_port + SP
-    recv_vport = begin_port + RV
-    send_vport = begin_port + SV
-    recv_aport = begin_port + RA
-    send_aport = begin_port + SA
     port_list=[state_port,recv_vport,send_vport,recv_aport,send_aport]
     mylock = threading.Lock()
     server_list=[]

@@ -7,7 +7,7 @@ import pickle
 import time
 import numpy
 import pyaudio
-ip='192.168.43.99'
+ip='117.78.1.190'
 begin_port=8888
 SP=0
 SV=1

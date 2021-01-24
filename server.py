@@ -192,7 +192,7 @@ def meeting_audio(meetnum,client_ra,client_sac):
 if __name__ == '__main__':
     with open('server_ini.txt') as server:
         lines=server.readlines()
-        ip=lines[0]
+        ip=str(lines[0]).replace('\n','')
         begin_port=int(lines[1])
     state_port = begin_port + SP
     recv_vport = begin_port + RV

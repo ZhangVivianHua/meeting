@@ -3,18 +3,11 @@ import threading
 import struct
 import time
 import datetime
-ip='192.168.43.99'
-begin_port=8888
 SP=0
 RV=1
 SV=2
 RA=3
 SA=4
-state_port=begin_port+SP
-recv_vport=begin_port+RV
-send_vport=begin_port+SV
-recv_aport=begin_port+RA
-send_aport=begin_port+SA
 clients=[]
 meets={}
 
@@ -29,6 +22,7 @@ def listen_contact():
 
 
 def listen_state(client):
+    client_name = str(client.getpeername())
     while True:
         try:
             info=struct.unpack('hh',client.recv(4))
@@ -38,12 +32,12 @@ def listen_state(client):
                     msg='系统超过3个会议，不能再创建新会议了'
                     feedback=1
                 else:
-                    msg='用户新建了一个视频会议'+str(info[1])
+                    msg='用户'+client_name+'新建了一个视频会议'+str(info[1])
                     meet={'origin':client,'member':[client,],'rvc':[],'svc':[],'rac':[],'sac':[]}
                     meets[info[1]]=meet
                     feedback=2
             elif info[0]==2:
-                msg='用户想要加入一个视频会议'+str(info[1])
+                msg='用户'+client_name+'想要加入一个视频会议'+str(info[1])
                 if info[1] in meets.keys():
                     if len(meets[info[1]]['member'])>=5:
                         msg+='\n超过5人，拒绝加入'
@@ -56,15 +50,15 @@ def listen_state(client):
                     msg+='\n该会议不存在！'
                     feedback=1
             else:
-                msg='退出系统'
+                msg='用户'+client_name+'退出系统'
                 clients.remove(client)
                 feedback=1
-            print('('+str(client.getpeername())+')'+msg)
+            print('('+client_name+')'+msg)
             client.sendall(msg.encode())
             client.sendall(struct.pack('h',feedback))
             if info[0] != 1 and info[0] != 2:
                 client.close()
-                print('客户端'+str(client.getpeername())+'已退出')
+                print('客户端'+client_name+'已退出')
                 break
             if feedback!=1:
                 clientrv, rvD_addr = server_list[1].accept()
@@ -83,19 +77,19 @@ def listen_state(client):
                     threading.Thread(target=meeting_video,args=(info[1],)).start()
                 threading.Thread(target=meeting_audio, args=(info[1], clientra, clientsa)).start()
                 for member in meets[info[1]]['member']:
-                    member.send(('客户端' + str(client.getpeername()) + '已加入').encode())
+                    member.send(('客户端'+client_name+'已加入').encode())
         except ConnectionResetError or struct.error:
             clients.remove(client)
-            print('客户端' + str(client.getpeername()) + '已退出')
             try:
+                print('客户端'+client_name+'已退出')
                 for meet in meets.keys():
                     if meets[meet]['origin'] == client:
                         meets.pop(meet)
                     elif client in meets[meet]['member']:
                         meets[meet]['member'].remove(client)
                         for member in meets[meet]['member']:
-                            member.send(('客户端' + str(client.getpeername()) + '已退出').encode())
-            except RuntimeError:
+                            member.send(('客户端'+client_name+'已退出').encode())
+            except RuntimeError or OSError:
                 pass
             client.close()
             print('客户端线程结束')
@@ -106,7 +100,7 @@ def meeting_video(meetnum):
     meet=meets[meetnum]
     print(meet)
     while True:
-        print('视频进行中')
+        #print('视频进行中')
         i=0
         if len(meet['rvc'])==0 and len(meet['svc'])==0 or meetnum not in meets.keys():
             msg = '会议' + str(meetnum) + '视频结束'
@@ -119,28 +113,28 @@ def meeting_video(meetnum):
                 data = b""
                 i=i+1
                 begin=struct.unpack('c',client_rv.recv(1))
-                print('收到begin'+str(begin))
+                #print('收到begin'+str(begin))
                 while True:
                     if begin[0] == b'B':
                         begin = struct.unpack('c', client_rv.recv(1))
-                        print('收到begin' + str(begin[0]))
+                        #print('收到begin' + str(begin[0]))
                         if begin[0] == b'C':
                             break
                         elif begin[0] != b'B':
                             e = client_rv.recv(20000)
                             print('错误信息长度：' + str(len(e)))
                             begin = struct.unpack('c', client_rv.recv(1))
-                            print('收到begin' + str(begin[0]))
+                            #print('收到begin' + str(begin[0]))
                     elif begin[0] != b'B':
                         e=client_rv.recv(20000)
                         print('错误信息长度：'+str(len(e)))
                         begin = struct.unpack('c', client_rv.recv(1))
-                        print('收到begin' + str(begin[0]))
+                        #print('收到begin' + str(begin[0]))
                 info=struct.unpack('h',client_rv.recv(2))
-                print('客户端：'+str(client_rv.getpeername())+'数据总长度:'+str(info[0]))
+                #print('客户端：'+str(client_rv.getpeername())+'数据总长度:'+str(info[0]))
                 data+=client_rv.recv(info[0])
                 while len(data)<info[0]:
-                    print('本次接收到'+str(len(data))+',再次尝试接收')
+                    #print('本次接收到'+str(len(data))+',再次尝试接收')
                     data+=client_rv.recv(info[0]-len(data))
             except ConnectionResetError or struct.error:
                 meets[meetnum]['rvc'].remove(client_rv)
@@ -148,7 +142,7 @@ def meeting_video(meetnum):
                 data=b""
             for client_sv in meet['svc']:
                 try:
-                    bol=False#client_sv.getpeername()[0]==client_rv.getpeername()[0]
+                    bol=client_sv.getpeername()[0]==client_rv.getpeername()[0]
                     if bol:
                         continue
                     client_sv.send(struct.pack('cc',b'B',b'C'))
@@ -164,7 +158,7 @@ def meeting_audio(meetnum,client_ra,client_sac):
     meet = meets[meetnum]
     print(meet)
     while True:
-        print('音频进行中')
+        #print('音频进行中')
         if len(meet['rac'])==0 and len(meet['sac'])==0 or meetnum not in meets.keys():
             msg = '会议' + str(meetnum) + '音频结束'
             print(msg)
@@ -172,12 +166,12 @@ def meeting_audio(meetnum,client_ra,client_sac):
         try:
             packed_size = client_ra.recv(struct.calcsize("h"))
             msg_size = struct.unpack("h", packed_size)[0]
-            print(str(datetime.datetime.now().time())+'预接收音频长度：'+str(msg_size))
+            #print(str(datetime.datetime.now().time())+'预接收音频长度：'+str(msg_size))
             data = client_ra.recv(msg_size)
             while len(data) < msg_size:
-                print('接收到' + str(len(data)) + ',继续接收')
+                #print('接收到' + str(len(data)) + ',继续接收')
                 data += client_ra.recv(msg_size - len(data))
-            print('收到音频长度：'+str(len(data)))
+            #print('收到音频长度：'+str(len(data)))
         except ConnectionResetError or struct.error:
             meets[meetnum]['rac'].remove(client_ra)
             print('客户端音频接收通道连接错误')
@@ -196,6 +190,15 @@ def meeting_audio(meetnum,client_ra,client_sac):
 
 
 if __name__ == '__main__':
+    with open('server_ini.txt') as server:
+        lines=server.readlines()
+        ip=lines[0]
+        begin_port=int(lines[1])
+    state_port = begin_port + SP
+    recv_vport = begin_port + RV
+    send_vport = begin_port + SV
+    recv_aport = begin_port + RA
+    send_aport = begin_port + SA
     port_list=[state_port,recv_vport,send_vport,recv_aport,send_aport]
     mylock = threading.Lock()
     server_list=[]

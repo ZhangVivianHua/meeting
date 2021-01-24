@@ -7,18 +7,11 @@ import pickle
 import time
 import numpy
 import pyaudio
-ip='192.168.43.99'
-begin_port=8888
 SP=0
 SV=1
 RV=2
 SA=3
 RA=4
-state_port=begin_port+SP
-send_vport=begin_port+SV
-recv_vport=begin_port+RV
-send_aport=begin_port+SA
-recv_aport=begin_port+RA
 CHUNK = 1024
 FORMAT = pyaudio.paInt16
 CHANNELS = 2
@@ -75,7 +68,13 @@ def video_send():
             _, img_encode = cv2.imencode('.jpg', img, img_param)  # 按格式生成图片
             img_code = numpy.array(img_encode)  # 转换成矩阵
             img_data = img_code.tobytes()
-            width, height, deep = img.shape
+            r, c, w = img.shape
+            key = numpy.random.randint(0, 255, size=(480, 640), dtype=numpy.uint8)
+            demo1 = numpy.zeros((r, c, w), dtype='|u1')
+            demo1[:, :, 0] = cv2.bitwise_xor(img[:, :, 0], key)  # 加密
+            demo1[:, :, 1] = cv2.bitwise_xor(img[:, :, 1], key)  #
+            demo1[:, :, 2] = cv2.bitwise_xor(img[:, :, 2], key)  #
+            '''width, height, deep = img.shape
             img_key = numpy.random.randint(0, 256, size=[width, height, deep], dtype=numpy.uint8)
             img_ency = cv2.bitwise_xor(img, img_key)
             _, key_encode = cv2.imencode('.jpg', img_key, img_param)  # 按格式生成图片
@@ -83,9 +82,10 @@ def video_send():
             key_data = key_code.tobytes()  # 生成相应的字符串
             _, imgc_encode = cv2.imencode('.jpg', img_ency, img_param)  # 按格式生成图片
             imgc_code = numpy.array(imgc_encode)  # 转换成矩阵
-            imgc_data = imgc_code.tobytes()  # 生成相应的字符串
+            imgc_data = imgc_code.tobytes()  # 生成相应的字符串'''
             try:
-                cv2.imshow("encryption",cv2.imdecode(imgc_encode, 1))
+                cv2.imshow('encryption', demo1)
+                #cv2.imshow("encryption",cv2.imdecode(imgc_encode, 1))
                 cv2.imshow('myself', img)
             finally:
                 if (cv2.waitKey(5) == 27):  # 每10ms刷新一次图片，按‘ESC’（27）退出
@@ -200,6 +200,15 @@ def server_msg():
 
 
 if __name__ == '__main__':
+    with open('client_ini.txt') as server:
+        lines=server.readlines()
+        ip=str(lines[0]).replace('\n','')
+        begin_port=int(lines[1])
+    state_port = begin_port + SP
+    send_vport = begin_port + SV
+    recv_vport = begin_port + RV
+    send_aport = begin_port + SA
+    recv_aport = begin_port + RA
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.connect((ip,state_port))
     print('成功连接服务器')

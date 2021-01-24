@@ -7,8 +7,6 @@ import pickle
 import time
 import numpy
 import pyaudio
-ip='117.78.1.190'
-begin_port=8888
 SP=0
 SV=1
 RV=2
@@ -70,6 +68,12 @@ def video_send():
             _, img_encode = cv2.imencode('.jpg', img, img_param)  # 按格式生成图片
             img_code = numpy.array(img_encode)  # 转换成矩阵
             img_data = img_code.tobytes()
+            r, c, w = img.shape
+            key = numpy.random.randint(0, 255, size=(480, 640), dtype=numpy.uint8)
+            demo1 = numpy.zeros((r, c, w), dtype='|u1')
+            demo1[:, :, 0] = cv2.bitwise_xor(img[:, :, 0], key)  # 加密
+            demo1[:, :, 1] = cv2.bitwise_xor(img[:, :, 1], key)  #
+            demo1[:, :, 2] = cv2.bitwise_xor(img[:, :, 2], key)  #
             '''width, height, deep = img.shape
             img_key = numpy.random.randint(0, 256, size=[width, height, deep], dtype=numpy.uint8)
             img_ency = cv2.bitwise_xor(img, img_key)
@@ -80,6 +84,7 @@ def video_send():
             imgc_code = numpy.array(imgc_encode)  # 转换成矩阵
             imgc_data = imgc_code.tobytes()  # 生成相应的字符串'''
             try:
+                cv2.imshow('encryption', demo1)
                 #cv2.imshow("encryption",cv2.imdecode(imgc_encode, 1))
                 cv2.imshow('myself', img)
             finally:
